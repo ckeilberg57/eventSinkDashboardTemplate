@@ -1,10 +1,10 @@
-# Pexip Event Sink Dashboard Installer
+# Pexip Event Sink Dashboard and DR Policy Flipping Template Installer
 
 <img width="1061" height="1182" alt="image" src="https://github.com/user-attachments/assets/a1e7c614-b753-4ddb-beb9-b364e6f4628c" />
 
 <img width="1062" height="1340" alt="image" src="https://github.com/user-attachments/assets/415aef59-f0b0-4cc4-9ce8-0564f9b9285c" />
 
-This package installs the Flask-based Pexip Event Sink dashboard on a Linux server using:
+This package installs the Flask-based Pexip Event Sink dashboard on a Linux Ubuntu Server (24.02 lts) using:
 
 - Apache as the public web server
 - Gunicorn as the local Python application service
