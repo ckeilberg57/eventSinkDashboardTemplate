@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sample Dashboard • Pexip Event Sink Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+
+  <style>
+    .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:700; line-height:1.6; }
+    .badge.green  { background:#064e3b; color:#34d399; border:1px solid #065f46; }
+    .badge.yellow { background:#7c5e02; color:#fde047; border:1px solid #a16207; }
+    .badge.orange { background:#7c2d12; color:#fdba74; border:1px solid #9a3412; }
+    .badge.red    { background:#7f1d1d; color:#fca5a5; border:1px solid #991b1b; }
+    .badge.gray   { background:#374151; color:#cbd5e1; border:1px solid #4b5563; }
+    .mono  { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .tight li { margin: 2px 0; }
+    .kv { display:grid; grid-template-columns:auto 1fr; gap:2px 10px; font-variant-numeric:tabular-nums; }
+    .kv b { color:#e5e7eb; }
+    .subtle { color:#94a3b8; }
+    .media-block { margin-top:6px; padding:8px; background:#111827; border:1px solid rgba(148,163,184,.2); border-radius:8px; }
+    .tiny { font-size:12px; color:#94a3b8; }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand">
+      <!-- Globe logo with one highlighted participant -->
+      <svg class="logo" viewBox="0 0 360 90" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"  stop-color="#60a5fa" stop-opacity="0.55"/>
+            <stop offset="60%" stop-color="#3b82f6" stop-opacity="0.15"/>
+            <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="ocean" cx="35%" cy="30%" r="70%">
+            <stop offset="0%"   stop-color="#0ea5e9"/>
+            <stop offset="55%"  stop-color="#0b5fa7"/>
+            <stop offset="100%" stop-color="#0b2540"/>
+          </radialGradient>
+          <style>
+            .grid { stroke: rgba(148,163,184,.35); stroke-width: .6; fill: none }
+            .link { stroke: #67e8f9; stroke-opacity:.65; stroke-width: 2; fill: none }
+            .iconBox { fill: #0ea5e9; fill-opacity:.12; stroke:#7dd3fc; stroke-width:1.2 }
+            .iconPerson { fill:#c7d2fe }
+            .ringStroke { stroke:#172554; stroke-width:1.5; fill:none }
+            .highlightBox { fill:#3b82f6; fill-opacity:.2; stroke:#3b82f6; stroke-width:1.6 }
+            .highlightPerson { fill:#e0f2fe }
+          </style>
+          <g id="userIcon">
+            <rect x="-7.5" y="-7.5" width="15" height="15" rx="3" class="iconBox"/>
+            <circle cx="0" cy="-2.2" r="2.4" class="iconPerson"/>
+            <path d="M-4.5,3.2 a6,4 0 0 1 9,0 v1.2 h-9z" class="iconPerson"/>
+          </g>
+          <g id="highlightUser">
+            <rect x="-9" y="-9" width="18" height="18" rx="4" class="highlightBox"/>
+            <circle cx="0" cy="-2.8" r="3" class="highlightPerson"/>
+            <path d="M-5.5,3.5 a7,5 0 0 1 11,0 v1.5 h-11z" class="highlightPerson"/>
+          </g>
+        </defs>
+        <g transform="translate(150,45)">
+          <circle r="42" fill="url(#glow)"/>
+          <circle r="30" fill="url(#ocean)" stroke="#0ea5e9" stroke-opacity=".35" stroke-width="1"/>
+          <ellipse rx="30" ry="30" class="grid"/>
+          <ellipse rx="26" ry="30" class="grid"/>
+          <ellipse rx="18" ry="30" class="grid"/>
+          <ellipse rx="10" ry="30" class="grid"/>
+          <ellipse rx="30" ry="20" class="grid"/>
+          <ellipse rx="30" ry="12" class="grid"/>
+          <ellipse rx="30" ry="5"  class="grid"/>
+          <line x1="-30" y1="0" x2="30" y2="0" class="grid"/>
+        </g>
+        <g transform="translate(150,45)">
+          <circle r="58" class="ringStroke"/>
+          <g class="link">
+            <path d="M0,0 L  0,-58"/>
+            <path d="M0,0 L  41,-41"/>
+            <path d="M0,0 L  58, 0"/>
+            <path d="M0,0 L  41, 41"/>
+            <path d="M0,0 L  0,  58"/>
+            <path d="M0,0 L -41, 41"/>
+            <path d="M0,0 L -58, 0"/>
+            <path d="M0,0 L -41,-41"/>
+          </g>
+          <g>
+            <g transform="translate(  0,-58)"><use href="#userIcon"/></g>
+            <g transform="translate( 41,-41)"><use href="#userIcon"/></g>
+            <g transform="translate( 58,  0)"><use href="#highlightUser"/></g>
+            <g transform="translate( 41, 41)"><use href="#userIcon"/></g>
+            <g transform="translate(  0, 58)"><use href="#userIcon"/></g>
+            <g transform="translate(-41, 41)"><use href="#userIcon"/></g>
+            <g transform="translate(-58,  0)"><use href="#userIcon"/></g>
+            <g transform="translate(-41,-41)"><use href="#userIcon"/></g>
+          </g>
+        </g>
+      </svg>
+      <div class="brand-text">
+        <div class="title">Sample Dashboard</div>
+        <div class="subtitle">Customize to your enterprise</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="pill pill-red" id="ambulancePill" style="display:none;">
+        <span class="ambulance-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M10 3h4v4h4v4h-4v4h-4v-4H6V7h4V3z"></path>
+          </svg>
+        </span>
+        AMBULANCE LIVE CALL ACTIVE • <span class="mono" id="ambulanceTag">iPAD----</span>
+      </span>
+      <span class="pill pill-green">Live</span>
+    </div>
+  </header>
+
+  <section class="policy-bar" aria-label="Infinity policy controls">
+    <div class="policy-card">
+      <div class="policy-title">Infinity Policy Controls</div>
+      <div class="policy-subtitle" id="policyStatusText">Checking current policy...</div>
+    </div>
+    <div class="policy-actions">
+      <button type="button" class="policy-toggle" id="teamsDrToggle" data-mode="teams_dr">
+        Toggle Teams DR
+      </button>
+    </div>
+    <div class="policy-details mono" id="policyDetails"></div>
+  </section>
+
+
+  <main class="dashboard">
+    <div class="card wide" id="nodeStatusTile">
+      <h3>Conference Node Status <span class="muted">• updates every 60 seconds</span></h3>
+      <div id="nodeStatusList" class="node-status-list"></div>
+    </div>
+
+    <div class="card wide">
+      <div class="card-head">
+        <h3>Disconnect Reasons over Time</h3>
+        <div class="big-number" id="totalCalls">{{ total_calls }}</div>
+      </div>
+      <div class="bar-chart-wrap"><canvas id="disconnectBarChart"></canvas></div>
+    </div>
+
+    <div class="card">
+      <h3>Consultations Last Hour</h3>
+      <div class="big-number" id="consultationsLastHour">{{ consultations_last_hour }}</div>
+      <div class="meta-block">
+        <h4>Service Tag</h4>
+        <ul id="serviceTags"></ul>
+      </div>
+      <div class="meta-block">
+        <h4>Browser Type</h4>
+        <ul id="browserTypes"></ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Last 50 Ended • Quality</h3>
+      <div class="viz-card">
+        <canvas id="endedQualityChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="lic-header">
+        <h3>Licensing</h3>
+        <span class="muted">• updates every 1 min</span>
+      </div>
+      <div id="licensingGauges" class="lic-grid"></div>
+    </div>
+
+    <div class="card wide">
+      <h3>Active Conferences</h3>
+      <div id="conferenceSections"></div>
+    </div>
+
+    <div class="card wide">
+      <h3 id="endedHeader">Recently Ended (Last 20)</h3>
+      <div id="endedSections"></div>
+    </div>
+  </main>
+
+<script>
+Chart.register(ChartDataLabels);
+Chart.defaults.color = '#cbd5e1';
+Chart.defaults.font.family = 'Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial';
+Chart.defaults.borderColor = 'rgba(148,163,184,0.25)';
+const gridColor = 'rgba(148,163,184,0.18)';
+
+
+/* --- Infinity Policy Controls --- */
+function policyButtonBusy(isBusy) {
+  document.querySelectorAll('.policy-toggle').forEach(btn => {
+    btn.disabled = isBusy;
+    btn.classList.toggle('busy', isBusy);
+  });
+}
+
+function renderPolicyStatus(data) {
+  const teamsBtn = document.getElementById('teamsDrToggle');
+  const statusText = document.getElementById('policyStatusText');
+  const details = document.getElementById('policyDetails');
+  if (!teamsBtn || !statusText || !details) return;
+
+  teamsBtn.classList.toggle('active', !!data.teams_dr_active);
+  teamsBtn.textContent = data.teams_dr_active ? 'Teams DR Active' : 'Toggle Teams DR';
+
+  const locs = Array.isArray(data.locations) ? data.locations : [];
+  if (data.mixed) {
+    statusText.textContent = 'Warning: locations are not using the same policy.';
+    statusText.className = 'policy-subtitle warning';
+  } else if (data.teams_dr_active) {
+    statusText.textContent = 'Current policy: Teams DR active';
+    statusText.className = 'policy-subtitle good';
+  } else if (data.normal_active) {
+    statusText.textContent = 'Current policy: Normal / Teams active';
+    statusText.className = 'policy-subtitle';
+  } else {
+    statusText.textContent = `Current policy: ${data.current_policy_id || 'unknown'}`;
+    statusText.className = 'policy-subtitle warning';
+  }
+
+  details.innerHTML = locs.map(l => {
+    const name = l.name || 'Location';
+    const policy = l.policy_id || 'unknown';
+    const label = l.policy_label || '';
+    const ok = l.ok ? '' : ' <span class="policy-error">ERROR</span>';
+    return `<span>${name}: policy ${policy} ${label ? '(' + label + ')' : ''}${ok}</span>`;
+  }).join('');
+}
+
+async function loadInfinityPolicyStatus() {
+  try {
+    const r = await fetch('/pexip-sink/api/infinity-policy/status', { cache: 'no-store' });
+    const data = await r.json();
+    renderPolicyStatus(data);
+  } catch (e) {
+    const statusText = document.getElementById('policyStatusText');
+    if (statusText) {
+      statusText.textContent = 'Unable to read Infinity policy status';
+      statusText.className = 'policy-subtitle warning';
+    }
+    console.error('Policy status failed:', e);
+  }
+}
+
+async function toggleInfinityPolicy(mode) {
+  policyButtonBusy(true);
+  const statusText = document.getElementById('policyStatusText');
+  if (statusText) statusText.textContent = 'Updating Infinity policy...';
+  try {
+    const r = await fetch('/pexip-sink/api/infinity-policy/toggle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+      body: JSON.stringify({ mode })
+    });
+    const data = await r.json();
+    if (!r.ok || !data.ok) throw new Error(data.error || data.target_policy_label || 'Policy update failed');
+    renderPolicyStatus(data.status);
+  } catch (e) {
+    if (statusText) {
+      statusText.textContent = `Policy update failed: ${e.message || e}`;
+      statusText.className = 'policy-subtitle warning';
+    }
+    console.error('Policy toggle failed:', e);
+  } finally {
+    policyButtonBusy(false);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.policy-toggle').forEach(btn => {
+    btn.addEventListener('click', () => toggleInfinityPolicy(btn.dataset.mode));
+  });
+  loadInfinityPolicyStatus();
+  setInterval(loadInfinityPolicyStatus, 30000);
+});
+
+const TERMINAL_CONFERENCE = new Set(['conference_ended']);
+const TERMINAL_PARTICIPANT = new Set(['participant_disconnected']);
+const REASONS_ORDER=[
+  'Call disconnected','Call rejected','Call failed - please contact your administrator',
+  'Timer expired awaiting token refresh','Browser closed','RFC3263 lookup failure',
+  'User initiated disconnect','Undefined reason'
+];
+
+function canonicalAlias(raw){ if(!raw) return 'unknown'; let s=String(raw); s=s.replace(/^sip:/i,''); s=s.split(';')[0].split('?')[0]; s=s.split('@')[0]; s=s.replace(/\s+/g,' ').trim().toLowerCase(); return s||'unknown'; }
+function qualityToLabel(q){ switch(q){ case'1_good':return'Good'; case'2_ok':return'OK'; case'3_bad':return'Bad'; case'4_terrible':return'Terrible'; default:return'Unknown'; } }
+function qualityBadge(q){ const l=qualityToLabel(q); const cls=(l==='Good')?'green':(l==='OK')?'yellow':(l==='Bad')?'orange':(l==='Terrible')?'red':'gray'; return `<span class="badge ${cls}">${l}</span>`; }
+function makeStatusHTML(s){ return (TERMINAL_CONFERENCE.has(String(s))||TERMINAL_PARTICIPANT.has(String(s)))?'<span class="badge red">ENDED</span>':'<span class="badge green">ACTIVE</span>'; }
+function n(v){ const x=Number(v); return Number.isFinite(x)?x:undefined; }
+function pick(o,k){ for(const kk of k){ if(o&&o[kk]!=null) return o[kk]; } return undefined; }
+function fmt(v,u=''){ if(v==null) return '—'; return u?`${v}${u}`:`${v}`; }
+function resStr(w,h){ if(w&&h) return `${w}×${h}`; return '—'; }
+function tsToLocal(ts){ if(!ts) return '—'; return new Date(ts*1000).toLocaleString(); }
+function rxStats(s){ return {recv:n(pick(s,['rx_packets_received'])),lost:n(pick(s,['rx_packets_lost'])),jitter:n(pick(s,['rx_jitter_ms']))}; }
+function txStats(s){ return {sent:n(pick(s,['tx_packets_sent'])),lost:n(pick(s,['tx_packets_lost'])),jitter:n(pick(s,['tx_jitter_ms']))}; }
+function normalizeReason(r){ if(!r||r==='Unknown') return 'Undefined reason'; return REASONS_ORDER.includes(r)?r:'Undefined reason'; }
+
+/* ---------- Eastern time tick helpers ---------- */
+const TZ = 'America/New_York';
+const tzHMFormatter = new Intl.DateTimeFormat('en-US', {
+  timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false
+});
+function parseUtcStamp(s){ return new Date(s.replace(' ','T') + 'Z'); }
+function getTZHourMinute(date){
+  const parts = tzHMFormatter.formatToParts(date);
+  const h = Number(parts.find(p => p.type === 'hour').value);
+  const m = Number(parts.find(p => p.type === 'minute').value);
+  return { h, m };
+}
+
+/* === Ended list limit (single source of truth) === */
+const ENDED_LIMIT = 20;
+function setEndedHeader() {
+  const h = document.getElementById('endedHeader');
+  if (h) h.textContent = `Recently Ended (Last ${ENDED_LIMIT})`;
+}
+
+/* --- Recently Ended with per-stream + totals --- */
+function renderGroupTilesEnded(groups, containerEl){
+  containerEl.innerHTML='';
+  groups.forEach(group=>{
+    const displayAlias=canonicalAlias(group.info.conference||'Unknown');
+
+    const pidRows=(group.participants||[]).map(p=>{
+      const badge=qualityBadge(p.quality_now||'0_unknown');
+
+      const rxT=p.rx_totals||{}, txT=p.tx_totals||{};
+      const rx_recv=rxT.recv, rx_lost=rxT.lost, rx_loss_pct=rxT.loss_pct;
+      const tx_sent=txT.sent, tx_lost=txT.lost, tx_loss_pct=txT.loss_pct;
+      const jitter_rx=rxT.jitter_avg, jitter_tx=txT.jitter_avg;
+      const fr = p.final_resolution || {}; const w = fr.w, h = fr.h;
+
+      const streams = Array.isArray(p.media_streams) ? p.media_streams : [];
+      const streamTable = streams.length ? `
+        <div class="media-block">
+          <div class="subtle" style="margin-bottom:6px">Per-stream end stats</div>
+          <div style="overflow:auto">
+          <table class="mono" style="width:100%; border-collapse:collapse; font-size:12px">
+            <thead>
+              <tr style="border-bottom:1px solid rgba(148,163,184,.25)">
+                <th style="text-align:left; padding:4px 6px">ID</th>
+                <th style="text-align:left; padding:4px 6px">Type</th>
+                <th style="text-align:left; padding:4px 6px">RX pkts</th>
+                <th style="text-align:left; padding:4px 6px">RX lost</th>
+                <th style="text-align:left; padding:4px 6px">TX pkts</th>
+                <th style="text-align:left; padding:4px 6px">TX lost</th>
+                <th style="text-align:left; padding:4px 6px">RX codec/fps/bitrate</th>
+                <th style="text-align:left; padding:4px 6px">TX codec/fps/bitrate</th>
+                <th style="text-align:left; padding:4px 6px">RX res</th>
+                <th style="text-align:left; padding:4px 6px">TX res</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${streams.map(s=>{
+                const xr = s.rx_resolution ? (s.rx_resolution.w && s.rx_resolution.h ? `${s.rx_resolution.w}×${s.rx_resolution.h}` : '') : '';
+                const xt = s.tx_resolution ? (s.tx_resolution.w && s.tx_resolution.h ? `${s.tx_resolution.w}×${s.tx_resolution.h}` : '') : '';
+                const rcfb = [s.rx_codec||'', s.rx_fps!=null?`${s.rx_fps}fps`:'' , s.rx_bitrate!=null?`${s.rx_bitrate}kbps`:'' ].filter(Boolean).join(' · ');
+                const tcfb = [s.tx_codec||'', s.tx_fps!=null?`${s.tx_fps}fps`:'' , s.tx_bitrate!=null?`${s.tx_bitrate}kbps`:'' ].filter(Boolean).join(' · ');
+                return `
+                <tr style="border-top:1px dashed rgba(148,163,184,.18)">
+                  <td style="padding:4px 6px">${s.stream_id||''}</td>
+                  <td style="padding:4px 6px">${(s.stream_type||'').toUpperCase()}</td>
+                  <td style="padding:4px 6px">${s.rx_packets_received ?? '—'}</td>
+                  <td style="padding:4px 6px">${s.rx_packets_lost ?? '—'}</td>
+                  <td style="padding:4px 6px">${s.tx_packets_sent ?? '—'}</td>
+                  <td style="padding:4px 6px">${s.tx_packets_lost ?? '—'}</td>
+                  <td style="padding:4px 6px">${rcfb||'—'}</td>
+                  <td style="padding:4px 6px">${tcfb||'—'}</td>
+                  <td style="padding:4px 6px">${xr||'—'}</td>
+                  <td style="padding:4px 6px">${xt||'—'}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+          </div>
+        </div>` : '';
+
+      const totalsBlock = `
+        <div class="media-block"><div class="kv">
+          <div class="subtle">RX Received</div><div><b>${fmt(rx_recv)}</b></div>
+          <div class="subtle">RX Lost</div><div><b>${fmt(rx_lost)}${rx_loss_pct!=null?` (${rx_loss_pct}%)`:''}</b></div>
+          <div class="subtle">RX Jitter</div><div><b>${fmt(jitter_rx,'ms')}</b></div>
+          <div class="subtle">TX Sent</div><div><b>${fmt(tx_sent)}</b></div>
+          <div class="subtle">TX Lost</div><div><b>${fmt(tx_lost)}${tx_loss_pct!=null?` (${tx_loss_pct}%)`:''}</b></div>
+          <div class="subtle">TX Jitter</div><div><b>${fmt(jitter_tx,'ms')}</b></div>
+          <div class="subtle">Final Resolution</div><div><b>${resStr(w,h)}</b></div>
+        </div></div>`;
+
+      return `
+        <li>
+          <div><span class="mono">${p.participant_id||'unknown'}</span> — Q: ${badge}
+            <span class="tiny">${p.connect_time?` • Start: ${tsToLocal(p.connect_time)}`:''}${p.ended_at?` • End: ${tsToLocal(p.ended_at)}`:''}</span>
+          </div>
+          ${streamTable}
+          ${totalsBlock}
+        </li>`;
+    }).join('');
+
+    const tile=document.createElement('div');
+    tile.className='conference-tile';
+    tile.innerHTML=`<h4>${displayAlias}</h4>
+      <p><strong>Status:</strong> <span class="badge red">ENDED</span></p>
+      <div class="meta-block small"><h5>Participants</h5><ul class="tight">${pidRows||'<li>None</li>'}</ul></div>`;
+    containerEl.appendChild(tile);
+  });
+}
+
+/* --- Quality Pie --- */
+let qualityChart=null;
+function updateEndedQualityChartFromEnded(ended){
+  const latestByPid=new Map();
+  (ended||[]).forEach(p=>{const pid=p.participant_id||'unknown';const ts=p._ts||0;if(!latestByPid.has(pid)||ts>latestByPid.get(pid)._ts)latestByPid.set(pid,p);});
+  const labels=['Good','OK','Bad','Terrible','Unknown'];const counts={Good:0,OK:0,Bad:0,Terrible:0,Unknown:0};
+  for(const p of latestByPid.values()){const q=p.quality_now||p.call_quality_now||'0_unknown';const l=(q==='1_good')?'Good':(q==='2_ok')?'OK':(q==='3_bad')?'Bad':(q==='4_terrible')?'Terrible':'Unknown';counts[l]++;}
+  const values=labels.map(l=>counts[l]);const total=values.reduce((a,b)=>a+b,0);
+  const chartData={labels,datasets:[{data:values,backgroundColor:['#22c55e','#eab308','#f97316','#ef4444','#94a3b8'],borderColor:'#1f2937',borderWidth:1}]};
+  const options={responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:12,color:Chart.defaults.color}},datalabels:{color:'#e5e7eb',font:{weight:'bold',size:13},formatter:v=>(!total||!v)?'':`${Math.round((v/total)*100)}%`},tooltip:{callbacks:{label:ctx=>{const v=ctx.raw||0;const pct=total?Math.round((v/total)*100):0;return `${ctx.label}: ${v} (${pct}%)`;}}}}};
+  if(!qualityChart){const ctx=document.getElementById('endedQualityChart').getContext('2d');qualityChart=new Chart(ctx,{type:'pie',data:chartData,options});}else{qualityChart.data=chartData;qualityChart.options=options;qualityChart.update();}
+}
+
+/* --- Disconnect Reasons Bar --- */
+let disconnectChart=null;
+function updateDisconnectBarChart(arr){
+  const counts=Object.fromEntries(REASONS_ORDER.map(r=>[r,0]));
+  (arr||[]).forEach(x=>{const r=normalizeReason(x.reason);counts[r]=(counts[r]||0)+(Number(x.count)||0);});
+  const labels=REASONS_ORDER;
+  const values=labels.map(l=>counts[l]);
+  const data={labels,datasets:[{label:'Disconnects',data:values,backgroundColor:'#8b5cf6',borderWidth:1}]};
+  const options={
+    responsive:true,maintainAspectRatio:false,animation:false,
+    plugins:{legend:{display:false},datalabels:{anchor:'end',align:'top',color:'#e5e7eb',formatter:v=>v||''}},
+    scales:{
+      y:{beginAtZero:true,ticks:{color:Chart.defaults.color,precision:0},grid:{color:gridColor}},
+      x:{ticks:{color:Chart.defaults.color,maxRotation:45,minRotation:0},grid:{color:gridColor}}
+    }
+  };
+  if(!disconnectChart){const ctx=document.getElementById('disconnectBarChart').getContext('2d');disconnectChart=new Chart(ctx,{type:'bar',data,options});}
+  else{disconnectChart.data=data;disconnectChart.options=options;disconnectChart.update();}
+}
+
+/* --- Active Conference Tiles --- */
+function renderGroupTilesActive(groups, containerEl) {
+  containerEl.innerHTML = '';
+  groups.forEach(group => {
+    const displayAlias = canonicalAlias(group.info.conference || 'unknown');
+    const statusHTML = makeStatusHTML(group.info.status || '');
+    const pidRows = (group.participants || []).map(p => {
+      const badge = qualityBadge(p.quality_now || '0_unknown');
+      return `<li><span class="mono">${p.participant_id || 'unknown'}</span> — Q: ${badge}</li>`;
+    }).join('');
+    const tile = document.createElement('div');
+    tile.className = 'conference-tile';
+    tile.innerHTML = `
+      <h4>${displayAlias}</h4>
+      <p><strong>Status:</strong> ${statusHTML}</p>
+      <div class="meta-block small">
+        <h5>Participants</h5>
+        <ul class="tight">${pidRows || '<li>None</li>'}</ul>
+      </div>`;
+    containerEl.appendChild(tile);
+  });
+}
+
+/* --- Worker VM (Node) Status --- */
+const nodeCharts = new Map();
+function makeEl(tag, cls, html){const el=document.createElement(tag); if(cls) el.className=cls; if(html) el.innerHTML=html; return el;}
+function pct(x){ const v = Number(x)||0; return Math.round(v <= 1 ? v*100 : v); }
+
+function buildNodeCard(n, hourLabelsUTC) {
+  const card = makeEl("div","node-card");
+  card.appendChild(makeEl("div","node-head",`${n.name||n.id||'Unknown'} / ${n.system_location||'—'} / ${n.version||'—'} / ${n.node_type||'—'}`));
+  card.appendChild(makeEl("div","node-meta",`Current media load: <b>${pct(n.media_load_now)}%</b>`));
+
+  const charts = makeEl("div","node-charts");
+  const capBox = makeEl("div","cap-box");
+  const capList = document.createElement("ul");
+  capList.className = "capacity-list";
+  capList.innerHTML = `
+    <li><span class="capacity-key key-purple">Full HD</span> = <span class="capacity-value val-green">${Number(n.max_full_hd_calls||0)}</span> Max calls</li>
+    <li><span class="capacity-key key-blue">SD</span> = <span class="capacity-value val-yellow">${Number(n.max_sd_calls||0)}</span> Max calls</li>
+    <li><span class="capacity-key key-cyan">Audio</span> = <span class="capacity-value val-green">${Number(n.max_audio_calls||0)}</span> Max calls</li>`;
+  capBox.appendChild(capList);
+
+  const lineCanvas = makeEl("canvas");
+  charts.appendChild(capBox);
+  charts.appendChild(lineCanvas);
+  card.appendChild(charts);
+
+  // Build labels in Eastern time; mark which are whole hours
+  const labelsSrc = Array.isArray(hourLabelsUTC) ? hourLabelsUTC : [];
+  const labels = [];
+  const isHourTick = [];
+  for (const iso of labelsSrc) {
+    const d = parseUtcStamp(iso);
+    const { h, m } = getTZHourMinute(d);
+    if (m === 0) {
+      labels.push(String(h));                // e.g., "11"
+      isHourTick.push(true);
+    } else {
+      labels.push(`.${String(m).padStart(2,'0')}`); // ".15" ".30" ".45"
+      isHourTick.push(false);
+    }
+  }
+
+  // Data aligned to ticks
+  const series = Array.isArray(n.media_load_series) ? n.media_load_series : [];
+  const seriesVals = labels.map((_, i) => pct(series[i]?.avg_media ?? 0));
+
+  const existing = nodeCharts.get(n.id) || {};
+  if (existing.line) existing.line.destroy();
+
+  const line = new Chart(lineCanvas.getContext("2d"), {
+    type: "line",
+    data: { labels, datasets: [{ label: "Media Load (%)", data: seriesVals, tension: .25, pointRadius: 2, borderColor: '#3b82f6', backgroundColor: '#3b82f6' }] },
+    options: {
+      responsive: true,
+      scales: {
+        y: { beginAtZero: true, max: 100, ticks: { callback: v => v + "%", color: Chart.defaults.color }, grid: { color: gridColor } },
+        x: {
+          grid: { color: gridColor },
+          ticks: {
+            autoSkip: false, maxRotation: 0, minRotation: 0,
+            color: ctx => isHourTick[ctx.index] ? '#ef4444' : Chart.defaults.color,
+            font:  ctx => isHourTick[ctx.index] ? { size: 14, weight: '700' } : { size: 11 },
+            callback: (value, index) => labels[index]
+          }
+        }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+  nodeCharts.set(n.id, { line });
+  return card;
+}
+
+async function loadWorkerVMStatus(){
+  const container = document.getElementById("nodeStatusList");
+  if(!container) return;
+  try {
+    const res = await fetch("/pexip-sink/worker-vm/status", { cache: "no-store" });
+    const data = await res.json();
+
+    // --- Ambulance live call pill (iPAD####) ---
+    const amb = data.ambulance || { active: false };
+    const ambPill = document.getElementById('ambulancePill');
+    const ambTag  = document.getElementById('ambulanceTag');
+    if (ambPill && ambTag) {
+      if (amb.active && amb.tag) {
+        ambTag.textContent = amb.tag;
+        ambPill.style.display = 'inline-block';
+      } else {
+        ambPill.style.display = 'none';
+      }
+    }
+
+    if(!data || !Array.isArray(data.nodes)) throw new Error("bad payload");
+    container.innerHTML = "";
+    data.nodes.sort((a,b)=> (a.name||"").localeCompare(b.name||""));
+    data.nodes.forEach(n => container.appendChild(buildNodeCard(n, data.hour_labels)));
+  } catch(e) {
+    console.error("WorkerVM status failed:", e);
+  }
+}
+
+/* --- Licensing --- */
+function gaugeColor(p){ if(p>=90) return '#ef4444'; if(p>=70) return '#f97316'; if(p>=50) return '#eab308'; return '#22c55e'; }
+async function loadLicensing(){
+  try{
+    const r = await fetch('/pexip-sink/licensing/status', { cache: 'no-store' });
+    const data = await r.json();
+    if (!data || !Array.isArray(data.items)) throw new Error('bad licensing payload');
+    const container = document.getElementById('licensingGauges');
+    container.innerHTML = '';
+    const order = ["audio","otj","port","vmr"];
+    const byKey = Object.fromEntries((data.items||[]).map(x => [x.key, x]));
+    const list = order.map(k => byKey[k]).filter(Boolean);
+    list.forEach(item => {
+      const count = Number(item.count||0);
+      const total = Number(item.total||0);
+      const pct = total>0 ? Math.min(100, Math.round((count/total)*100)) : 0;
+      const color = gaugeColor(pct);
+      const card = document.createElement('div');
+      card.className = 'lic-gauge';
+      card.innerHTML = `
+        <div class="lic-tube">
+          <div class="lic-fill" style="height:${pct}%; background:${color}"></div>
+          <div class="lic-mark" style="bottom:${pct}%"></div>
+        </div>
+        <div class="lic-meta">
+          <div class="lic-label">${item.label}</div>
+          <div class="lic-count"><span class="count">${count}</span> / <span class="total">${total}</span></div>
+          <div class="lic-pct">${pct}% used</div>
+        </div>`;
+      container.appendChild(card);
+    });
+  }catch(e){ console.error('Licensing fetch failed:', e); }
+}
+
+/* --- Dashboard Update Loop --- */
+let lastEndedSignature = '';
+let lastTotalCalls = null;
+
+function groupActiveForUI(rawGroups){
+  return (rawGroups || []).map(g => ({
+    info: { conference: g.conference || 'unknown', vendor: g.vendor || 'unknown', status: g.status || 'active' },
+    participants: (g.participants || []).map(p => ({
+      participant_id: p.participant_id || 'unknown',
+      quality_now: p.quality_now || p.call_quality_now || '0_unknown',
+    })),
+    ts: g._ts || 0
+  }));
+}
+
+async function updateDashboard() {
+  try{
+    const res = await fetch('/pexip-sink/chart-data', { cache: 'no-store' });
+    const data = await res.json();
+
+    // --- Ambulance live call pill (iPAD####) ---
+    const amb = data.ambulance || { active: false };
+    const ambPill = document.getElementById('ambulancePill');
+    const ambTag  = document.getElementById('ambulanceTag');
+    if (ambPill && ambTag) {
+      if (amb.active && amb.tag) {
+        ambTag.textContent = amb.tag;
+        ambPill.style.display = 'inline-block';
+      } else {
+        ambPill.style.display = 'none';
+      }
+    }
+
+
+    document.getElementById('consultationsLastHour').textContent = data.recent_consults ?? 0;
+
+    const tagEl = document.getElementById('serviceTags');
+    if (tagEl) {
+      tagEl.innerHTML = '';
+      (data.service_tags || []).forEach(t => {
+        const li = document.createElement('li'); li.textContent = `${t.name || t.key || 'tag'}: ${t.count ?? 0}`; tagEl.appendChild(li);
+      });
+      if (!tagEl.children.length) tagEl.innerHTML = '<li>None</li>';
+    }
+
+    const activeGroups = groupActiveForUI(data.participants_grouped);
+    renderGroupTilesActive(activeGroups, document.getElementById('conferenceSections'));
+
+    const sig = data.ended_signature || '0-0';
+    if (sig !== lastEndedSignature) {
+      const ended = data.ended_participants || [];
+
+      const groupMap = {};
+      ended.forEach(p => {
+        const key = (p.call_id && p.call_id !== 'unknown') ? p.call_id : canonicalAlias(p.conference || p.session_key || 'unknown');
+        if (!groupMap[key]) groupMap[key] = { info:{ conference: p.conference, call_id: p.call_id, status: 'conference_ended' }, participants:[], ts:0 };
+        groupMap[key].participants.push(p);
+        groupMap[key].ts = Math.max(groupMap[key].ts, p._ts || 0);
+      });
+      const groups = Object.values(groupMap).sort((a,b)=> b.ts - a.ts).slice(0, ENDED_LIMIT);
+      renderGroupTilesEnded(groups, document.getElementById('endedSections'));
+
+      updateEndedQualityChartFromEnded(ended);
+      updateDisconnectBarChart(data.disconnect_reasons || []);
+
+      if (data.total_calls !== lastTotalCalls) {
+        document.getElementById('totalCalls').textContent = data.total_calls ?? 0;
+        lastTotalCalls = data.total_calls ?? 0;
+      }
+      lastEndedSignature = sig;
+    }
+
+    const browsersMap = new Map();
+    [...(data.participants||[]), ...(data.ended_participants||[])].forEach(p=>{
+      if (p.vendor) browsersMap.set(p.vendor, (browsersMap.get(p.vendor)||0)+1);
+    });
+    const renderCountList=(map, el)=>{
+      el.innerHTML='';
+      const rows=[...map.entries()].sort((a,b)=>(b[1]-a[1])||a[0].localeCompare(b[0]));
+      if(!rows.length){ el.innerHTML='<li>None</li>'; return; }
+      rows.forEach(([k,v])=>{ const li=document.createElement('li'); li.textContent=`${k}: ${v}`; el.appendChild(li); });
+    };
+    renderCountList(browsersMap, document.getElementById('browserTypes'));
+
+  }catch(e){
+    console.error('updateDashboard failed:', e);
+  }
+}
+
+// Kickoff timers
+setInterval(updateDashboard, 3000);
+window.onload = () => {
+  setEndedHeader();        // keep header text in sync with ENDED_LIMIT
+  updateDashboard();
+  (function loadWorker(){ loadWorkerVMStatus(); setTimeout(loadWorker, 60000); })();
+  (function loadLic(){ loadLicensing(); setTimeout(loadLic, 60000); })();
+};
+</script>
+</body>
+</html>
