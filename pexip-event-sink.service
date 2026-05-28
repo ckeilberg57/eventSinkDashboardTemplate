@@ -1,0 +1,19 @@
+[Unit]
+Description=Pexip Event Sink Dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/pexip-event-sink/app
+EnvironmentFile=/etc/pexip-event-sink/pexip-event-sink.env
+ExecStart=/opt/pexip-event-sink/venv/bin/gunicorn --workers 3 --bind 127.0.0.1:5050 app:app
+Restart=always
+RestartSec=5
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

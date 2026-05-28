@@ -1,0 +1,12 @@
+<VirtualHost *:80>
+    ServerName __SERVER_NAME__
+    ProxyPreserveHost On
+    RequestHeader set X-Forwarded-Proto "http"
+
+    ProxyPass        /pexip-sink http://127.0.0.1:5050/pexip-sink retry=0
+    ProxyPassReverse /pexip-sink http://127.0.0.1:5050/pexip-sink
+
+    <Location /pexip-sink>
+        Require all granted
+    </Location>
+</VirtualHost>

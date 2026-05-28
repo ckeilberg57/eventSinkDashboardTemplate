@@ -1,0 +1,20 @@
+<VirtualHost *:80>
+    ServerName __SERVER_NAME__
+    Redirect permanent / https://__SERVER_NAME__/
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName __SERVER_NAME__
+    SSLEngine on
+    SSLCertificateFile __CERT_FILE__
+    SSLCertificateKeyFile __KEY_FILE__
+
+    ProxyPreserveHost On
+    RequestHeader set X-Forwarded-Proto "https"
+    ProxyPass        /pexip-sink http://127.0.0.1:5050/pexip-sink retry=0
+    ProxyPassReverse /pexip-sink http://127.0.0.1:5050/pexip-sink
+
+    <Location /pexip-sink>
+        Require all granted
+    </Location>
+</VirtualHost>
